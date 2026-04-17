@@ -7,6 +7,14 @@
 [![Hermes](https://img.shields.io/badge/Hermes-Agent-cyan.svg)](https://github.com/NousResearch/hermes-agent)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-compatible-green.svg)](https://xiaping.coze.site/)
 
+<p align="center">
+  <img src="assets/demo.png" width="720" alt="诸葛亮 Skill · 推演实录">
+</p>
+
+<p align="center">
+  <em>一句话 <code>predict "Napoli vs Lazio"</code> → 量子扇开启 → 五数据源融合 → 六爻评分 → 卦象决策。</em>
+</p>
+
 ---
 
 ## ⚡ 30 秒上手
