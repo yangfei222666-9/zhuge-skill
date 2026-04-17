@@ -4,7 +4,7 @@
 
 ---
 
-## [Unreleased]
+## [v1.0.4] — 2026-04-17 · UX + 工具批
 
 ### Added
 - `scripts/error_log.py` — 轻量 JSONL 错误日志（含 `--resolve` CLI + priority/status 字段），接入 `backfill` 守护循环、`fetch_actual_result`、`core/llm.py` 三个 except 点
@@ -13,15 +13,17 @@
 - `scripts/crystallize.py --dry-run` 预览结晶结果不写入
 - `scripts/stats.py --crystals` 晶体排行 + stale 监控
 - `scripts/stats.py --errors` 最近错误摘要
+- `README.en.md` 英文版（为国际用户 / Show HN 准备）
+- README.md §📬 反馈与联系 段（邮箱优先、微信辅）
 - README.md §全平台兼容 扩展为每宿主（Claude Code / Cursor / OpenClaw / Hermes / 纯 Python）可复制的接入片段
+- 本文件 `CHANGELOG.md` 独立
 
 ### Changed
 - 内部：`crystallize(verbose, write=True)` 新增 `write` 参数支持 dry-run
 - 内部：`match_crystal()` 返回带更新后 counters 的副本（调用方能拿到最新 recurrence_count）
 
 ### Notes
-- 本节包含 v1.0.3 之后、下一次发版（v1.0.4）之前的所有改动
-- 改动均向后兼容：旧的 v1 晶体无 new 字段时 load 正常；error_log 老条目无 priority/status 时 summary 显示 `?`
+- 向后兼容：旧的 v1 晶体无 new 字段时 load 正常；error_log 老条目无 priority/status 时 summary 显示 `?`
 
 ---
 

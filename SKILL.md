@@ -1,4 +1,4 @@
-# 诸葛亮 · AI 推演军师 (zhuge-skill) v1.0.3
+# 诸葛亮 · AI 推演军师 (zhuge-skill) v1.0.4
 
 > **别再每次决策都烧 token。** 用结构化推演 + 晶体复用，把 90% 的决策留在 CPU 里跑，只在必要时调 LLM。
 >
@@ -203,6 +203,18 @@ grep -n "write_env\|\.env" core/wizard.py
 ---
 
 ## 更新日志
+
+### v1.0.4 (2026-04-17) — UX + 工具批
+- `scripts/predict.py` 预测输出显示晶体复用次数 + 首见年龄 + 信任标签
+- `scripts/crystallize.py --dry-run` 预览结晶结果不写入
+- `scripts/stats.py --crystals` 晶体排行 + stale 监控
+- `scripts/error_log.py --resolve <id>` + priority / status 字段（生命周期对齐 self-improving-agent 方法论）
+- 晶体 schema v2：新增 `first_seen` / `last_seen` / `recurrence_count`，`match_crystal` 命中回写 `crystals_local.jsonl`
+- 新增 `scripts/error_log.py`：JSONL 错误日志，接入 `backfill` 守护循环 / `fetch_actual_result` / `core/llm.py` 三个 except 点
+- 新增 `README.en.md` 英文版（为国际用户 / Show HN 准备）
+- 新增 `CHANGELOG.md` 独立文件
+- README 加 📬 反馈与联系 段（邮箱优先，微信 yf529486 辅）
+- README 加跨 Agent 接入片段（Claude Code / Cursor / OpenClaw / Hermes / 纯 Python 各一个可复制示例）
 
 ### v1.0.3 (2026-04-17) — 视觉素材升级
 - 新增 `assets/demo.png` — 诸葛亮推演引擎实录截图（启动动画 + 6 维爻位实时评分）
