@@ -2,7 +2,7 @@
 
 > **别再每次决策都烧 token。** 用结构化推演 + 晶体复用，把 90% 的决策留在 CPU 里跑，只在必要时调 LLM。
 >
-> 五数据源融合 · 六十四卦决策 · 经验自学习 · 共同进化
+> 整合 **API-Football / The Odds API / Understat xG** 等 5 大数据源 · 6 维爻位 + 64 卦决策 · 经验自学习 · **DeepSeek / Kimi / 通义 / 智谱 / Claude / GPT / Gemini** 等 12 家 LLM 任选
 
 ---
 

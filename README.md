@@ -1,6 +1,8 @@
 # 🎴 诸葛亮 · AI 推演军师
 
-> **羽扇纶巾，谈笑间，樯橹灰飞烟灭** — 给 AI 一支量子羽扇
+> **羽扇纶巾，谈笑间，樯橹灰飞烟灭** — 给 AI Agent 一支量子羽扇
+>
+> 整合 **API-Football / The Odds API / Understat xG** 等 5 大数据源，以 **6 维爻位 + 64 卦决策树**做结构化推演 —— **0 token 做预测**，LLM 只在你明确要"孔明评语"时才调用（省 90% token）。支持 **DeepSeek / Kimi / 通义 / 智谱 / Claude / GPT / Gemini** 等 12 家 LLM。
 
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -12,7 +14,7 @@
 </p>
 
 <p align="center">
-  <em>一句话 <code>predict "Napoli vs Lazio"</code> → 量子扇开启 → 五数据源融合 → 六爻评分 → 卦象决策。</em>
+  <em>一句话 <code>predict "Napoli vs Lazio"</code> → 量子扇开启 → 5 大数据源融合 → 6 维爻位评分 → 64 卦决策。</em>
 </p>
 
 ---
