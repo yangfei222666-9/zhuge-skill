@@ -80,6 +80,90 @@ LLM_PROVIDER=doubao  # 改成 kimi / qwen / claude / 任何
 | Cursor | `.cursor/rules/zhuge.mdc` |
 | 任何 Python 环境 | 直接 `python start.py` |
 
+#### 接入片段（复制即用）
+
+<details>
+<summary><b>Claude Code</b></summary>
+
+```bash
+# 1. 安装到 Claude 的 skills 目录
+git clone https://github.com/yangfei222666-9/zhuge-skill.git ~/.claude/skills/zhuge-skill
+cd ~/.claude/skills/zhuge-skill && pip install -r requirements.txt
+
+# 2. 在任何 Claude Code 会话里用自然语言调用
+# 示例 prompt:
+#   用诸葛亮 skill 预测 Napoli vs Lazio
+#   跑一下 zhuge-skill 的守护模式，每 30 分钟回传赛后结果
+```
+
+Claude Code 会自动读取 `SKILL.md` 的 frontmatter 做技能发现，不需要手动注册。
+</details>
+
+<details>
+<summary><b>Cursor</b></summary>
+
+在项目根目录建 `.cursor/rules/zhuge.mdc`：
+
+```mdc
+---
+description: 足球预测 + 易经推演（zhuge-skill）
+globs: **/*
+alwaysApply: false
+---
+当用户要预测比赛或做结构化决策时，可用 zhuge-skill：
+
+  python /path/to/zhuge-skill/start.py predict "Home vs Away"
+
+会输出 6 维爻位评分 + 64 卦决策 + 命中晶体（如有）。
+skill 本地运行，0 token 做结构化推演，LLM 只在生成孔明评语时调用。
+```
+</details>
+
+<details>
+<summary><b>OpenClaw</b></summary>
+
+```bash
+# 方法一：clawdhub / clawhub 同步（如果你已装）
+clawhub install zhuge-skill
+
+# 方法二：手动拷贝
+git clone https://github.com/yangfei222666-9/zhuge-skill.git ~/.openclaw/skills/zhuge-skill
+```
+
+OpenClaw 启动时会自动扫描 `~/.openclaw/skills/` 下所有带 `SKILL.md` 前置 frontmatter 的目录，把 description 注入到 workspace 上下文。
+</details>
+
+<details>
+<summary><b>Hermes Agent</b></summary>
+
+```bash
+git clone https://github.com/yangfei222666-9/zhuge-skill.git ~/.hermes/skills/zhuge
+cd ~/.hermes/skills/zhuge && pip install -r requirements.txt
+```
+
+Hermes 按 skill 目录 + `SKILL.md` 的标准结构发现，无需额外配置。具体激活细节参考 [Hermes 官方文档](https://github.com/NousResearch/hermes-agent)。
+</details>
+
+<details>
+<summary><b>纯 Python / 脚本化调用</b></summary>
+
+```bash
+# 作为 CLI 工具，不依赖任何 agent 宿主
+git clone https://github.com/yangfei222666-9/zhuge-skill.git
+cd zhuge-skill && pip install -r requirements.txt
+python start.py predict "Napoli vs Lazio"
+```
+
+也可以在自己的 Python 代码里导入：
+
+```python
+from scripts.predict import predict_match
+record = predict_match("Napoli vs Lazio")
+print(record["hexagram_name"], record["yang_count"], record["predictions"])
+# record 同时会被追加到 data/experience.jsonl 供回传统计用
+```
+</details>
+
 ---
 
 ## 🚀 命令速查

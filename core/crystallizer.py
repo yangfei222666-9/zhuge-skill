@@ -8,10 +8,10 @@
 4. 晶体可应用于未来预测（加权 / 否决 / 增强）
 5. 晶体可导出共享（共同进化）
 
-晶体格式：
+晶体格式（v2 schema）：
 {
-  "crystal_id": "xtl-abc123",
-  "version": "v1",
+  "crystal_id": "xtl-abc123",              # 稳定去重 key（pattern key）
+  "version": "v2",
   "trigger": {
     "hexagram": "履",
     "yang_count_min": 5,
@@ -19,14 +19,16 @@
   },
   "outcome": "1x2=home",
   "stats": {
-    "matches": 12,
+    "matches": 12,                         # 训练样本数（来源记录）
     "hits": 10,
     "rate": 0.833,
-    "confidence_interval": [0.65, 0.95]
+    "ci_95": [0.65, 0.95]
   },
   "discovered_at": "2026-04-17T...",
-  "discovered_by": "agent_id_or_user",
-  "tags": ["football", "italian-serie-a"]
+  "first_seen": "2026-04-17T...",          # 本晶体首次生成/观测时间
+  "last_seen": "2026-04-21T...",           # 最近一次被 match_crystal 命中的时间
+  "recurrence_count": 7,                   # 被实战复用的次数（非训练样本数）
+  "tags": ["football"]
 }
 """
 import json
@@ -48,6 +50,22 @@ CRYSTALS_SHARED = ROOT / "data" / "crystals_shared.jsonl"
 MIN_SAMPLES = 3       # 至少 N 场才能结晶
 MIN_HIT_RATE = 0.60   # 命中率 ≥ 60% 才算晶体
 CONFIDENCE_Z = 1.96   # 95% 置信区间
+
+
+def _find_existing(crystal_id: str) -> Optional[Dict]:
+    """在本地晶体库里查已有的同 ID 晶体（用来保留 first_seen / recurrence_count）"""
+    if not CRYSTALS_LOCAL.exists():
+        return None
+    with open(CRYSTALS_LOCAL, encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                try:
+                    c = json.loads(line)
+                    if c.get("crystal_id") == crystal_id:
+                        return c
+                except Exception:
+                    pass
+    return None
 
 
 def _load_records() -> list:
@@ -103,9 +121,12 @@ def crystallize(verbose=True) -> List[Dict]:
 
         ci_lo, ci_hi = _wilson_ci(hits, len(group))
 
+        cid = f"xtl-{hashlib.md5(f'{hex_name}{yang}{sel}'.encode()).hexdigest()[:8]}"
+        now_iso = datetime.now(timezone.utc).isoformat()
+        existing = _find_existing(cid)
         crystal = {
-            "crystal_id": f"xtl-{hashlib.md5(f'{hex_name}{yang}{sel}'.encode()).hexdigest()[:8]}",
-            "version": "v1",
+            "crystal_id": cid,
+            "version": "v2",
             "trigger": {
                 "hexagram": hex_name,
                 "yang_count": yang,
@@ -117,7 +138,10 @@ def crystallize(verbose=True) -> List[Dict]:
                 "rate": round(rate, 3),
                 "ci_95": [round(ci_lo, 3), round(ci_hi, 3)],
             },
-            "discovered_at": datetime.now(timezone.utc).isoformat(),
+            "discovered_at": now_iso,
+            "first_seen": (existing or {}).get("first_seen", now_iso),
+            "last_seen": (existing or {}).get("last_seen", now_iso),
+            "recurrence_count": (existing or {}).get("recurrence_count", 0),
             "tags": ["football"],
         }
         crystals.append(crystal)
@@ -154,7 +178,7 @@ def load_crystals() -> List[Dict]:
 
 
 def match_crystal(hex_result: Dict) -> Optional[Dict]:
-    """检查推演结果是否触发某个晶体"""
+    """检查推演结果是否触发某个晶体（命中时回写 last_seen / recurrence_count 到本地库）"""
     crystals = load_crystals()
     matched = []
     for c in crystals:
@@ -167,5 +191,42 @@ def match_crystal(hex_result: Dict) -> Optional[Dict]:
 
     if not matched:
         return None
-    # 返回命中率最高的
-    return max(matched, key=lambda c: c["stats"]["rate"])
+
+    best = max(matched, key=lambda c: c["stats"]["rate"])
+    _record_recurrence(best["crystal_id"])
+    # 返回更新后的副本（让调用方拿到最新 recurrence_count）
+    best = dict(best)
+    best["last_seen"] = datetime.now(timezone.utc).isoformat()
+    best["recurrence_count"] = best.get("recurrence_count", 0) + 1
+    return best
+
+
+def _record_recurrence(crystal_id: str) -> None:
+    """晶体被 match 命中时，更新本地库里的 last_seen 和 recurrence_count。
+    不动 crystals_shared.jsonl（那是从公共池拉来的，只读）。"""
+    if not CRYSTALS_LOCAL.exists():
+        return
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        lines = CRYSTALS_LOCAL.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return
+    updated = False
+    out = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            c = json.loads(line)
+        except Exception:
+            out.append(line)
+            continue
+        if c.get("crystal_id") == crystal_id:
+            c["last_seen"] = now_iso
+            c["recurrence_count"] = c.get("recurrence_count", 0) + 1
+            c.setdefault("first_seen", c.get("discovered_at", now_iso))
+            updated = True
+        out.append(json.dumps(c, ensure_ascii=False))
+    if updated:
+        CRYSTALS_LOCAL.write_text("\n".join(out) + "\n", encoding="utf-8")
