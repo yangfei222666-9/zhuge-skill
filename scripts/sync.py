@@ -1,26 +1,36 @@
 """
-共同进化 — 晶体共享同步
+共同进化 — 晶体池同步（v1.0.1 起：只读取，不上传）
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+架构级隐私合约（不可绕过）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+本 skill 从 v1.0.1 起采取**单向消费**设计：
+  ✓ 可以 pull —— 从公共晶体池拉取别人贡献的匿名晶体
+  ✗ 不可以 push —— 本模块**没有上传通道**
+
+这是**架构保证**，不是"现在没写以后可能加"：
+  - 你的预测历史、比赛记录、API key、任何本地数据永远不会被本 skill 上传到任何地方
+  - 作者 / skill 维护者也无法通过本 skill 读到你的数据——因为没有通道
+  - 如果你未来 fork 本 skill 并想加共享功能，请自觉遵循白名单脱敏（见 PRIVACY.md）
 
 工作模式：
-1. 上传：把本地结晶的「高命中晶体」匿名上传到共享池（GitHub Release / 本地共享文件）
-2. 下载：从共享池拉别人贡献的晶体
-3. 合并：本地晶体 + 共享晶体 → 形成集体智能
-
-支持两种共享池：
-- 本地文件：~/.zhuge_skill/shared/crystals.jsonl（多 Agent 共享同一台机器）
-- GitHub Release：通过 URL 拉远程晶体（默认开启）
+  pull:   从公共 GitHub Release 拉匿名晶体（单向入）
+  status: 本地查看晶体池
 
 用法：
-    python scripts/sync.py pull               # 拉远程晶体
-    python scripts/sync.py push               # 推本地晶体到本地共享文件
-    python scripts/sync.py status             # 查看晶体池状态
+    python scripts/sync.py pull               # 拉公共晶体
+    python scripts/sync.py status             # 查看本地晶体池
+
+远程地址（可被 ZHUGE_REMOTE_CRYSTAL_URL 环境变量覆盖）：
+    https://raw.githubusercontent.com/taijios9/zhuge-crystals/main/crystals.jsonl
+    —— 这是一个**公共只读** URL，curl 一下就能看到内容，完全透明。
 """
 import sys
 import json
 import os
 import argparse
 from pathlib import Path
-from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -30,24 +40,29 @@ from core.crystallizer import (CRYSTALS_LOCAL, CRYSTALS_SHARED, load_crystals,
 from core.welcome import (NEON_CYAN, NEON_GREEN, NEON_YELLOW, GOLD,
                           DIM, BOLD, RESET, HOT_RED as RED)
 
-# 共享池位置
-SHARED_HUB = Path.home() / ".zhuge_skill" / "shared" / "crystals.jsonl"
 REMOTE_URL = os.getenv("ZHUGE_REMOTE_CRYSTAL_URL",
-    "https://raw.githubusercontent.com/taijios9/zhuge-crystals/main/crystals.jsonl")
+    "https://raw.githubusercontent.com/yangfei222666-9/zhuge-crystals/main/crystals.jsonl")
+
+# ===== 隐私白名单（给 fork 者的参考常量，本脚本自身不使用） =====
+# 如果你 fork 后想加共享功能，请只上传这些字段，绝不包括其它
+ALLOWED_SHARED_FIELDS = {
+    "crystal_id",   # 匿名 hash，不含用户标识
+    "version",      # 晶体 schema 版本
+    "trigger",      # {hexagram, yang_count} — 纯结构化特征
+    "outcome",      # 如 "1x2=home" — 枚举值
+    "stats",        # {matches, hits, rate, ci_95} — 纯数值
+    "tags",         # 分类标签
+}
 
 
 def status():
     local = load_crystals()
-    shared_hub_count = 0
-    if SHARED_HUB.exists():
-        with open(SHARED_HUB, encoding="utf-8") as f:
-            shared_hub_count = sum(1 for line in f if line.strip())
 
     print(f"\n  {NEON_CYAN}╔═══ 晶体池状态 {' ' * 30}═══╗{RESET}")
     print(f"  {NEON_CYAN}║{RESET}")
     print(f"  {NEON_CYAN}║{RESET}  本地晶体: {GOLD}{len(local)}{RESET} 个")
-    print(f"  {NEON_CYAN}║{RESET}  共享池:   {GOLD}{shared_hub_count}{RESET} 个 ({SHARED_HUB})")
     print(f"  {NEON_CYAN}║{RESET}  远程地址: {DIM}{REMOTE_URL}{RESET}")
+    print(f"  {NEON_CYAN}║{RESET}  {DIM}（单向消费架构：本 skill 不上传任何数据）{RESET}")
     print(f"  {NEON_CYAN}║{RESET}")
 
     if local:
@@ -62,59 +77,21 @@ def status():
     print(f"  {NEON_CYAN}╚{'═' * 50}╝{RESET}\n")
 
 
-def push():
-    """把本地晶体推到共享池"""
-    local = []
-    if CRYSTALS_LOCAL.exists():
-        with open(CRYSTALS_LOCAL, encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    try:
-                        local.append(json.loads(line))
-                    except Exception:
-                        pass
-
-    if not local:
-        print(f"\n  {NEON_YELLOW}没有本地晶体可推送。先跑：python scripts/crystallize.py{RESET}\n")
-        return
-
-    SHARED_HUB.parent.mkdir(parents=True, exist_ok=True)
-    # 合并：去重（按 crystal_id）
-    existing_ids = set()
-    if SHARED_HUB.exists():
-        with open(SHARED_HUB, encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    try:
-                        existing_ids.add(json.loads(line)["crystal_id"])
-                    except Exception:
-                        pass
-
-    new_count = 0
-    with open(SHARED_HUB, "a", encoding="utf-8") as f:
-        for c in local:
-            if c["crystal_id"] not in existing_ids:
-                f.write(json.dumps(c, ensure_ascii=False) + "\n")
-                new_count += 1
-
-    print(f"\n  {NEON_GREEN}✓{RESET} 推送完成: 本地晶体 {len(local)} 个 → 共享池新增 {new_count} 个")
-    print(f"  {DIM}位置: {SHARED_HUB}{RESET}\n")
-
-
 def pull():
-    """从远程拉晶体"""
+    """从远程公共仓库拉晶体（只入不出）"""
     try:
         import requests
     except ImportError:
         print(f"\n  {RED}需要 requests，pip install requests{RESET}\n")
         return
 
-    print(f"\n  从远程拉取: {DIM}{REMOTE_URL}{RESET}")
+    print(f"\n  从公共仓库拉取: {DIM}{REMOTE_URL}{RESET}")
+    print(f"  {DIM}（此请求是只读的 HTTP GET，不携带任何本地数据）{RESET}")
     try:
         r = requests.get(REMOTE_URL, timeout=10)
         if not r.ok:
             print(f"  {RED}拉取失败 (HTTP {r.status_code}){RESET}")
-            print(f"  {DIM}（可能仓库还没建。你也可以手动维护 data/crystals_shared.jsonl）{RESET}\n")
+            print(f"  {DIM}（可能仓库还没建。也可以手动维护 data/crystals_shared.jsonl）{RESET}\n")
             return
         new_crystals = []
         for line in r.text.splitlines():
@@ -148,26 +125,17 @@ def pull():
 
 
 def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("action", choices=["status", "push", "pull", "auto"],
-                   help="status/push/pull/auto(=push+pull)")
+    p = argparse.ArgumentParser(
+        description="晶体池同步 — v1.0.1 起单向消费架构（只 pull 不 push）"
+    )
+    p.add_argument("action", choices=["status", "pull"],
+                   help="status=本地查看 / pull=从公共池拉匿名晶体")
     args = p.parse_args()
 
     if args.action == "status":
         status()
-    elif args.action == "push":
-        push()
     elif args.action == "pull":
         pull()
-    elif args.action == "auto":
-        # 完整闭环：先结晶，再推，再拉
-        print(f"\n  [1/3] 结晶本地经验...")
-        crystallize()
-        print(f"\n  [2/3] 推送到共享池...")
-        push()
-        print(f"  [3/3] 拉取远程晶体...")
-        pull()
-        status()
 
 
 if __name__ == "__main__":

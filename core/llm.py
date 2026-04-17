@@ -1,7 +1,11 @@
 """LLM 适配层 — 12 个供应商统一接口（OpenAI 兼容）"""
 import os
+import sys
 import json
 from typing import Optional
+
+# 全局标记：避免每次调用都打印警告
+_RELAY_WARNING_SHOWN = False
 
 PROVIDERS = {
     # 国内主流
@@ -63,6 +67,20 @@ class LLMClient:
         self.api_key = api_key or os.getenv(cfg["key_env"], "")
         self.format = cfg.get("format", "openai")
         self.enabled = bool(self.api_key)
+
+        # 第三方中转运行时警告（每个进程只显示一次）
+        global _RELAY_WARNING_SHOWN
+        if self.enabled and self.provider == "relay" and not _RELAY_WARNING_SHOWN:
+            print(
+                "\n⚠️  [zhuge-skill] LLM relay mode is enabled.\n"
+                f"   Your prompts and API key will transit through {self.base}\n"
+                "   This is a THIRD-PARTY proxy — the operator can technically see your data.\n"
+                "   For production use, prefer direct official APIs "
+                "(DEEPSEEK_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY).\n"
+                "   See PRIVACY.md for details.\n",
+                file=sys.stderr,
+            )
+            _RELAY_WARNING_SHOWN = True
 
     def chat(self, prompt: str, system: str = None,
              max_tokens: int = 500, timeout: int = 30) -> Optional[str]:
