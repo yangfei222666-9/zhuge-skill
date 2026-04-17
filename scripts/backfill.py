@@ -89,7 +89,12 @@ def _fetch_actual_result(api_fid: int) -> dict:
             "total_goals": gh + ga,
             "status": status,
         }
-    except Exception:
+    except Exception as e:
+        try:
+            from scripts.error_log import log_error
+            log_error("fetch_actual_result", e, {"api_fid": api_fid})
+        except Exception:
+            pass
         return None
 
 
@@ -199,6 +204,11 @@ def loop_backfill(interval_minutes: int = 30):
             print("\n  停止守护进程")
             break
         except Exception as e:
+            try:
+                from scripts.error_log import log_error
+                log_error("backfill_loop", e, {"interval_min": interval_minutes})
+            except Exception:
+                pass
             print(f"  ERR: {e}（30 秒后重试）")
             time.sleep(30)
 

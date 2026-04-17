@@ -101,6 +101,15 @@ class LLMClient:
             else:
                 return self._call_openai(prompt, system, max_tokens, timeout, requests)
         except Exception as e:
+            try:
+                import sys
+                from pathlib import Path
+                sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+                from scripts.error_log import log_error
+                log_error("llm_call", e, {"format": self.format,
+                                          "provider": getattr(self, "provider", "?")})
+            except Exception:
+                pass
             return f"[LLM error: {e}]"
 
     def _call_openai(self, prompt, system, max_tokens, timeout, requests):

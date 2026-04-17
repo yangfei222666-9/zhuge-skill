@@ -157,7 +157,13 @@ def show_stats(days: int = 0):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--days", type=int, default=0, help="只统计最近 N 天，0=全部")
+    p.add_argument("--errors", type=int, nargs="?", const=10, default=0,
+                   help="显示最近 N 条错误（默认 10），不跑预测统计")
     args = p.parse_args()
+    if args.errors:
+        from scripts.error_log import summarize_recent
+        print(summarize_recent(args.errors))
+        return
     show_stats(days=args.days)
 
 
