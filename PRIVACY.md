@@ -120,5 +120,6 @@ grep -rn "requests.get\|requests.post\|urlopen" core/ scripts/
 
 ## 变更历史
 
+- **v1.0.2 (2026-04-17)** — 无代码变更；SKILL.md 同步修正，移除与本合约矛盾的旧 §晶体共享 描述
 - **v1.0.1 (2026-04-17)** — 首次形成此合约；移除 `sync.py` 的 `push` 函数，固化单向消费架构
 - v1.0.0 — Initial release

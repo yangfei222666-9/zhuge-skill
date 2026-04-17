@@ -1,4 +1,4 @@
-# 诸葛亮 · AI 推演军师 (zhuge-skill) v1.0.1
+# 诸葛亮 · AI 推演军师 (zhuge-skill) v1.0.2
 
 > **别再每次决策都烧 token。** 用结构化推演 + 晶体复用，把 90% 的决策留在 CPU 里跑，只在必要时调 LLM。
 >
@@ -39,7 +39,7 @@
 | 结果回传 | `python scripts/backfill.py` | 比赛后回填实际结果，更新命中率 |
 | 命中率统计 | `python scripts/stats.py` | 看历史表现 |
 | **经验结晶** | `python scripts/crystallize.py` | 提炼成功模式为「晶体」（**本地**操作） |
-| **共同进化** | `python scripts/sync.py auto` | 推/拉晶体到共享池（**涉及外部上传，见下方 §安全与隐私**） |
+| **共同进化** | `python scripts/sync.py pull` | 从公共池**只拉取**匿名晶体（单向消费，HTTP GET，不携带本地数据） |
 | 权重校准 | `python scripts/calibrate.py` | 用回传数据自动调爻位权重 |
 | 战报 | `python scripts/report.py --llm` | LLM 写古风周报/月报 |
 | 守护模式 | `python scripts/backfill.py --loop 30` | 每 30 分钟自动回传 |
@@ -66,7 +66,7 @@ python start.py predict "Napoli vs Lazio" --league serie-a
 ```
 预测 → 写经验库 → 等结果 → backfill 回传 → stats 看准确率
                                             ↓
-共同进化 ← sync 推/拉晶体  ←  crystallize 结晶  ← calibrate 校准权重
+共同进化 ← sync 拉公共晶体（只入） ← crystallize 本地结晶 ← calibrate 校准权重
 ```
 
 ---
@@ -117,8 +117,8 @@ Skill 支持 12 个供应商。**只需配置其中一个**，其他留空：
 | `scripts/stats.py` | 本地统计 | ❌ 否 |
 | `scripts/calibrate.py` | 本地调参 | ❌ 否 |
 | `scripts/crystallize.py` | 本地提炼"晶体" | ❌ 否（只写本地 `data/crystals_local.jsonl`） |
-| **`scripts/sync.py auto`** | 推/拉晶体 | ⚠️ **是** — 见下方 §晶体共享 |
-| **`scripts/share.py`** | 手动分享 | ⚠️ **是** — 见下方 §晶体共享 |
+| `scripts/sync.py pull` | 从公共 URL 拉匿名晶体（只 GET） | ↓ 仅拉入，**不外发** |
+| `scripts/share.py` | 生成本地 md/json 到 `exports/` | ❌ 否（纯本地文件，不联网） |
 | `scripts/report.py --llm` | 调 LLM 写周报 | ↗ prompt 送 LLM 供应商 |
 
 ### LLM 调用（所有涉及 LLM 的操作）
@@ -141,21 +141,20 @@ Relay 仅适用于：
 - 中国大陆访问不了官方 API 时的临时方案
 - 你**完全信任**该中转服务提供方
 
-### 晶体共享（`sync.py` / `share.py`）
+### 晶体拉取（`sync.py`）与本地导出（`share.py`）
 
-这两个脚本会把你本地生成的「晶体」（`data/crystals_shared.jsonl`）**上传到外部共享池**。
+**v1.0.1 的架构事实**：本 skill 的代码里**没有任何一行把本地数据发到网络**。
 
-**v1.0.1 起：默认关闭自动共享**。要启用必须显式加 flag：
+- `scripts/sync.py` 只有两个子命令：`pull`（HTTP GET 从公共 URL 拉）和 `status`（本地查看）。**`push` 函数已从代码中移除**，不是"默认关闭"——是根本没写。
+- `scripts/share.py` 只把你本地的预测记录渲染成 `exports/predictions_*.md|json` 文件，供你自己手动分享，**不联网**。
 
-```bash
-python scripts/sync.py auto --i-understand-data-leaves-my-machine
-```
+**公共晶体池**（作为 `sync.py pull` 的来源）：
+- URL：`https://raw.githubusercontent.com/yangfei222666-9/zhuge-crystals/main/crystals.jsonl`
+- 可通过 `ZHUGE_REMOTE_CRYSTAL_URL` 环境变量改为你自己的 fork
+- 这是一个**公开只读** URL，`curl` 就能看到内容，完全透明
+- 贡献流程（给社区加晶体）是 GitHub Pull Request，**不是 skill 自动上传**
 
-**上传的内容**：
-- 晶体的抽象特征（卦象编号、爻位模式、命中率）
-- **不含**原始比赛名、具体赔率、你的 API key、任何个人信息
-
-**上传目标**：GitHub Release（`https://github.com/<你的用户名>/zhuge-crystals/releases`）。**此共享池完全自托管**，不经过 OpenClaw、ClawHub 或其它第三方服务。
+详见 [PRIVACY.md](./PRIVACY.md) 的架构级隐私合约。
 
 ### 本地写入权限
 
@@ -170,8 +169,17 @@ python scripts/sync.py auto --i-understand-data-leaves-my-machine
 打开这三个文件，grep 关键词确认行为：
 
 ```bash
-grep -n "requests\|urlopen\|http" scripts/sync.py
+# 1. 确认 sync.py 没有任何上传逻辑（应只看到 docstring 里 "没有 push" 的字样）
+grep -n "requests.post\|push\|upload\|POST" scripts/sync.py
+
+# 2. 确认 share.py 不联网（应无匹配）
 grep -n "requests\|urlopen\|http" scripts/share.py
+
+# 3. 确认全仓库没有隐藏的上传端点
+grep -rn "requests.post\|urlopen.*POST\|upload" scripts/ core/
+#    应只看到 core/llm.py 里调你自己配置的 LLM 供应商（不含本地数据库）
+
+# 4. 确认 wizard 写 .env 需要用户确认
 grep -n "write_env\|\.env" core/wizard.py
 ```
 
@@ -196,15 +204,24 @@ grep -n "write_env\|\.env" core/wizard.py
 
 ## 更新日志
 
+### v1.0.2 (2026-04-17) — 文档一致性修正
+- 修复 SKILL.md 与 PRIVACY.md 自相矛盾点：原 §晶体共享 节仍沿用 v1.0.0 "有上传功能、默认关闭"的旧描述，与 v1.0.1 的代码事实（`push` 已移除）不一致，已重写为 §晶体拉取 与本地导出，对齐代码
+- 数据流向表：`sync.py` 改为 `pull`（只 GET），`share.py` 标为纯本地导出
+- 自学习闭环图修正：`sync 推/拉` → `sync 拉公共晶体（只入）`
+- 审计 grep 命令扩展到 4 条，加入"全仓库扫上传端点"一项
+- 代码层面零变更，仅文档修正
+
 ### v1.0.1 (2026-04-17) — 透明度升级
 - 新增 §环境变量清单（12 个 LLM + 2 个数据源，每个用途/获取地址/降级行为说明）
 - 新增 §安全与隐私（数据流向表 + 每个脚本是否向外发数据）
 - 明确 LLM 中转风险（relay 模式数据流向第三方）
-- 明确晶体共享目标（GitHub Release，完全自托管，不经过 ClawHub 等）
-- **默认关闭自动共享**：`sync.py` 要显式加 `--i-understand-data-leaves-my-machine` flag
-- 新增 §如何审计（3 行 grep 命令自查）
+- **架构级隐私合约**：`sync.py` 的 `push` 函数从代码中移除，固化为单向消费架构（只 pull 不 push）
+- `sync.py` 子命令简化为 `pull`（从公开 URL 只读拉取）和 `status`（本地查看）
+- `share.py` 明确为本地导出工具（生成 `exports/*.md|json`），不联网
+- 新增 [PRIVACY.md](./PRIVACY.md)：详细列出网络调用清单、作者数据可见度矩阵、fork 者脱敏白名单
+- 新增 §如何审计（4 行 grep 命令自查）
 
 ### v1.0.0 (2026-04-17) — Initial release on ClawHub
 - 5-source data fusion + 64-hexagram reasoning + experience crystallization
 - 12+ LLM provider support
-- Guardian mode + crystal-sharing pool
+- Guardian mode + crystal pool (pull-only from v1.0.1)
