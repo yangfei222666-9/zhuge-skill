@@ -154,15 +154,90 @@ def show_stats(days: int = 0):
     print(f"  {NEON_CYAN}╚{'═' * 50}╝{RESET}\n")
 
 
+def show_crystals(stale_days: int = 30, limit: int = 20):
+    """晶体排行报告：按复用次数降序 + stale 监控（超过 stale_days 没被命中的晶体）"""
+    from core.crystallizer import load_crystals
+    now = datetime.now(timezone.utc)
+    stale_cutoff = now - timedelta(days=stale_days)
+
+    crystals = load_crystals()
+    if not crystals:
+        print(f"\n  {DIM}还没有晶体。先跑 python scripts/crystallize.py{RESET}\n")
+        return
+
+    # 按 recurrence_count 降序，同级按 rate 降序
+    crystals.sort(
+        key=lambda c: (c.get("recurrence_count", 0), c.get("stats", {}).get("rate", 0)),
+        reverse=True,
+    )
+
+    def age(iso):
+        if not iso:
+            return "?"
+        try:
+            t = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
+            d = (now - t).days
+            return f"{d}d 前" if d > 0 else "今日"
+        except Exception:
+            return "?"
+
+    def is_stale(c):
+        last = c.get("last_seen") or c.get("discovered_at")
+        if not last:
+            return False
+        try:
+            t = datetime.fromisoformat(last.replace("Z", "+00:00"))
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
+            return t < stale_cutoff and c.get("recurrence_count", 0) == 0
+        except Exception:
+            return False
+
+    print(f"\n  {NEON_CYAN}╔═══ 晶体排行 ({len(crystals)} 个){' ' * 30}═══╗{RESET}")
+    print(f"  {NEON_CYAN}║{RESET}")
+    print(f"  {NEON_CYAN}║{RESET}  {BOLD}ID{RESET}          "
+          f"{BOLD}卦象{RESET}   {BOLD}输出{RESET}          "
+          f"{BOLD}命中率{RESET}    {BOLD}复用{RESET}    {BOLD}最近{RESET}")
+    for c in crystals[:limit]:
+        s = c.get("stats", {})
+        t = c.get("trigger", {})
+        rc = c.get("recurrence_count", 0)
+        rate_pct = int(s.get("rate", 0) * 100)
+        stale_mark = f" {RED}[stale]{RESET}" if is_stale(c) else ""
+        print(f"  {NEON_CYAN}║{RESET}  {c.get('crystal_id','?'):<12} "
+              f"{t.get('hexagram','?'):<4} "
+              f"{c.get('outcome','?'):<12}  "
+              f"{rate_pct:>3}% ({s.get('hits',0)}/{s.get('matches',0)})  "
+              f"{rc:>3}   "
+              f"{age(c.get('last_seen') or c.get('discovered_at'))}"
+              f"{stale_mark}")
+
+    stale_count = sum(1 for c in crystals if is_stale(c))
+    active_count = sum(1 for c in crystals if c.get("recurrence_count", 0) > 0)
+    print(f"  {NEON_CYAN}║{RESET}")
+    print(f"  {NEON_CYAN}║{RESET}  {DIM}活跃晶体（有复用）: {active_count}  "
+          f"· stale 晶体（{stale_days}d+ 未命中且 0 复用）: {stale_count}{RESET}")
+    print(f"  {NEON_CYAN}╚{'═' * 50}╝{RESET}\n")
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--days", type=int, default=0, help="只统计最近 N 天，0=全部")
     p.add_argument("--errors", type=int, nargs="?", const=10, default=0,
                    help="显示最近 N 条错误（默认 10），不跑预测统计")
+    p.add_argument("--crystals", action="store_true",
+                   help="晶体排行 + stale 监控，不跑预测统计")
+    p.add_argument("--stale-days", type=int, default=30,
+                   help="晶体 N 天未命中算 stale（默认 30）")
     args = p.parse_args()
     if args.errors:
         from scripts.error_log import summarize_recent
         print(summarize_recent(args.errors))
+        return
+    if args.crystals:
+        show_crystals(stale_days=args.stale_days)
         return
     show_stats(days=args.days)
 

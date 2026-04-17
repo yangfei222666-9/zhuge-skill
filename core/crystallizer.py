@@ -93,8 +93,9 @@ def _wilson_ci(hits: int, n: int, z: float = CONFIDENCE_Z):
     return (max(0, center - spread), min(1, center + spread))
 
 
-def crystallize(verbose=True) -> List[Dict]:
-    """从历史回传记录中提炼晶体"""
+def crystallize(verbose=True, write=True) -> List[Dict]:
+    """从历史回传记录中提炼晶体。
+    write=False 时只计算不写入（预览用），保留既有 crystals_local.jsonl 不变。"""
     records = [r for r in _load_records()
                if (r.get("prediction_correct") or {}).get("1x2") is not None]
 
@@ -146,14 +147,15 @@ def crystallize(verbose=True) -> List[Dict]:
         }
         crystals.append(crystal)
 
-    # 写入本地晶体库
-    CRYSTALS_LOCAL.parent.mkdir(parents=True, exist_ok=True)
-    with open(CRYSTALS_LOCAL, "w", encoding="utf-8") as f:
-        for c in crystals:
-            f.write(json.dumps(c, ensure_ascii=False) + "\n")
+    if write:
+        CRYSTALS_LOCAL.parent.mkdir(parents=True, exist_ok=True)
+        with open(CRYSTALS_LOCAL, "w", encoding="utf-8") as f:
+            for c in crystals:
+                f.write(json.dumps(c, ensure_ascii=False) + "\n")
 
     if verbose:
-        print(f"  发现 {len(crystals)} 个晶体（已存入 data/crystals_local.jsonl）")
+        mode = "已存入 data/crystals_local.jsonl" if write else "DRY-RUN 未写入"
+        print(f"  发现 {len(crystals)} 个晶体（{mode}）")
         for c in crystals[:5]:
             print(f"    [{c['crystal_id']}] {c['trigger']['hexagram']}卦 阳{c['trigger']['yang_count']}/6 → "
                   f"{c['outcome']}  命中率 {c['stats']['rate']*100:.0f}% "

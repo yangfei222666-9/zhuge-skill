@@ -143,8 +143,28 @@ def predict_match(match_str: str, league: str = "serie-a", save: bool = True,
     crystal = match_crystal(hex_result)
     if crystal:
         s = crystal["stats"]
+        rc = crystal.get("recurrence_count", 0)
+        age_str = ""
+        if crystal.get("first_seen"):
+            try:
+                from datetime import datetime as _dt, timezone as _tz
+                fs = _dt.fromisoformat(crystal["first_seen"].replace("Z", "+00:00"))
+                if fs.tzinfo is None:
+                    fs = fs.replace(tzinfo=_tz.utc)
+                days = (_dt.now(_tz.utc) - fs).days
+                age_str = f" · 首见 {days}d 前" if days > 0 else " · 首见今日"
+            except Exception:
+                pass
+        # 复用次数越多越可信，给颜色提示
+        trust_tag = "验证中"
+        if rc >= 5:
+            trust_tag = "高复用 ⭐"
+        elif rc >= 2:
+            trust_tag = "复用中"
         print(f"  {NEON_PINK}    ✦ 触发晶体 [{crystal['crystal_id']}] "
-              f"{crystal['outcome']}  历史命中率 {s['rate']*100:.0f}% ({s['hits']}/{s['matches']}){RESET}")
+              f"{crystal['outcome']}  历史命中率 {s['rate']*100:.0f}% "
+              f"({s['hits']}/{s['matches']}){RESET}")
+        print(f"  {NEON_PINK}      已被复用 {rc} 次{age_str} · {trust_tag}{RESET}")
 
     home_implied = (1/odds["home"]) / (1/odds["home"] + 1/odds["draw"] + 1/odds["away"]) if odds else 0.5
     odds_dict = {**(odds or {}),

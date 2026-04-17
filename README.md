@@ -1,5 +1,7 @@
 # 🎴 诸葛亮 · AI 推演军师
 
+**中文** · [English](README.en.md)
+
 > **羽扇纶巾，谈笑间，樯橹灰飞烟灭** — 给 AI Agent 一支量子羽扇
 >
 > 整合 **API-Football / The Odds API / Understat xG** 等 5 大数据源，以 **6 维爻位 + 64 卦决策树**做结构化推演 —— **0 token 做预测**，LLM 只在你明确要"孔明评语"时才调用（省 90% token）。支持 **DeepSeek / Kimi / 通义 / 智谱 / Claude / GPT / Gemini** 等 12 家 LLM。
@@ -307,3 +309,15 @@ MIT — 自由使用、修改、商用。
 - API-Football / The Odds API / Understat — 数据源
 - Hermes Agent / OpenClaw — Agent 平台
 - 周易、三国演义 — 千年智慧
+
+---
+
+## 📬 反馈与联系
+
+装上了？跑不起来？有想法想聊？**欢迎直接找我**：
+
+- **邮箱（优先）**: `yangfei222666@gmail.com`
+- 微信（辅）: `yf529486`
+- GitHub Issue: [提 issue](https://github.com/yangfei222666-9/zhuge-skill/issues/new)
+
+这是早期项目，你的每一条反馈（哪怕是"装了跑不起来"）都会被认真看。

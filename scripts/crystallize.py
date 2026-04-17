@@ -20,18 +20,18 @@ from core.welcome import NEON_CYAN, NEON_GREEN, GOLD, DIM, BOLD, RESET
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--share", action="store_true",
-                   help="结晶后立即推到共享池")
+    p.add_argument("--dry-run", action="store_true",
+                   help="只预览计算结果，不写入 crystals_local.jsonl")
     args = p.parse_args()
 
-    print(f"\n  {NEON_CYAN}╔═══ 经验结晶引擎 启动 {' ' * 22}═══╗{RESET}")
+    banner = "经验结晶引擎 启动（DRY-RUN）" if args.dry_run else "经验结晶引擎 启动"
+    pad = max(50 - len(banner) * 2, 0)
+    print(f"\n  {NEON_CYAN}╔═══ {banner} {' ' * pad}═══╗{RESET}")
     print(f"  {NEON_CYAN}║{RESET}")
-    crystals = crystallize(verbose=True)
+    crystals = crystallize(verbose=True, write=not args.dry_run)
+    if args.dry_run and crystals:
+        print(f"\n  {DIM}（以上为预览；如要写入，去掉 --dry-run 重新运行）{RESET}")
     print(f"  {NEON_CYAN}╚{'═' * 50}╝{RESET}\n")
-
-    if args.share and crystals:
-        from scripts.sync import push
-        push()
 
 
 if __name__ == "__main__":
