@@ -82,9 +82,24 @@ class LLMClient:
             )
             _RELAY_WARNING_SHOWN = True
 
+    @staticmethod
+    def _sanitize(text: str, max_len: int = 8000) -> str:
+        """Defensive clamp: strip control chars, cap length. Called on ALL external-facing fields.
+
+        For prompt-injection defense per Semgrep audit: even though this skill's prompts
+        are constructed from structured data (hexagrams/yao/match names), not raw user text,
+        we still clamp as defense-in-depth for future callers that may pass user input.
+        """
+        if not isinstance(text, str):
+            text = str(text)
+        # Drop ASCII control chars except \n \t
+        cleaned = "".join(ch for ch in text if ch.isprintable() or ch in ("\n", "\t"))
+        return cleaned[:max_len]
+
     def chat(self, prompt: str, system: str = None,
              max_tokens: int = 500, timeout: int = 30) -> Optional[str]:
-        """调 LLM，返回文本。失败/未启用返回 None。"""
+        """调 LLM，返回文本。失败/未启用返回 None。
+        Inputs are sanitized + all providers use structured message format (no raw concat)."""
         if not self.enabled:
             return None
 
@@ -92,6 +107,11 @@ class LLMClient:
             import requests
         except ImportError:
             return None
+
+        # Defense-in-depth: clamp inputs before any transport (see _sanitize docstring)
+        prompt = self._sanitize(prompt)
+        if system:
+            system = self._sanitize(system, max_len=2000)
 
         try:
             if self.format == "anthropic":
@@ -143,11 +163,17 @@ class LLMClient:
         return r.json()["content"][0]["text"]
 
     def _call_gemini(self, prompt, system, max_tokens, timeout, requests):
-        full_prompt = (system + "\n\n" + prompt) if system else prompt
+        # Per Semgrep audit fix: use structured systemInstruction instead of concat.
+        # Prevents prompt from overriding system role even with untrusted input.
+        body = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.7},
+        }
+        if system:
+            body["systemInstruction"] = {"parts": [{"text": system}]}
         r = requests.post(
             f"{self.base}/models/{self.model}:generateContent?key={self.api_key}",
-            json={"contents": [{"parts": [{"text": full_prompt}]}],
-                  "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.7}},
+            json=body,
             timeout=timeout,
         )
         r.raise_for_status()
