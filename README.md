@@ -65,13 +65,35 @@ python start.py
 | 64 卦表 | 决策推演引擎 | 内置 |
 | 经验库 | 自学习数据 | 内置 12 条种子 |
 
-### 🌍 12 LLM 全供应商兼容
-豆包 / Kimi / 通义千问 / 智谱 GLM / Yi / 百川 / MiniMax / DeepSeek / OpenAI / Claude / Gemini / 中转
+### 🌍 12 云商 + 🏠 本地 Ollama（零成本）
+
+豆包 / Kimi / 通义千问 / 智谱 GLM / Yi / 百川 / MiniMax / DeepSeek / OpenAI / Claude / Gemini / 中转 —— 外加**本地 Ollama**（免费跑开源 LLM）。
 
 一行配置切换：
 ```bash
 LLM_PROVIDER=doubao  # 改成 kimi / qwen / claude / 任何
 ```
+
+#### 三档落地 · 从零成本到满血
+
+| Tier | 需要 | 得到什么 | 合适谁 |
+| --- | --- | --- | --- |
+| **0 · 零配置** | 只有 Python | 六爻 + 卦象 + 模板评语（DEMO 模式） | 先看效果的围观党 |
+| **1 · 本地 LLM** | 装 [Ollama](https://ollama.com/) + 拉开源模型 | + 孔明亲笔古文评（完全免费） | 不想给云厂商付费/递 prompt 的人 |
+| **2 · 满血** | 加 API-Football key | + 真实赔率/阵容/H2H 数据 | 认真做预测 |
+
+**Tier 1 · 本地 Qwen 7B 三行启动**（实测 10/10 通过，p50 ~12s/场）：
+
+```bash
+ollama pull qwen2.5:7b                                        # 4.7 GB，一次性
+export LLM_PROVIDER=openai \
+       OPENAI_API_BASE=http://localhost:11434/v1 \
+       OPENAI_API_KEY=ollama \
+       OPENAI_MODEL=qwen2.5:7b
+python start.py predict "Napoli vs Lazio"                     # 孔明亲笔走本地 Qwen 推理
+```
+
+> Ollama 暴露 OpenAI 兼容端点，所以复用 `LLM_PROVIDER=openai` 即可，不用改代码。想换模型直接 `OPENAI_MODEL=qwen2.5:3b` 或 `llama3.2` 任意 Ollama 模型。
 
 ### 🎮 全平台兼容
 | 平台 | 安装路径 |

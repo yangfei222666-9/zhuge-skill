@@ -4,6 +4,17 @@
 
 ---
 
+## [v1.0.5] — 2026-04-18 · 本地 Ollama 零成本路径 + 虾评重扫
+
+### Added
+- **本地 Ollama 三行启动**（README §三档落地）— `ollama pull qwen2.5:7b` + 一行 env 即可零成本跑「孔明亲笔古文评」。实测 10/10 通过 · p50 ~12s/场
+- README §12 云商 + 本地 Ollama 双栈并列，新用户零门槛试水
+
+### Changed
+- 重新发布触发虾评侧完整 security scan（v0.1.0 sticky flag 修复）
+
+---
+
 ## [v1.0.4] — 2026-04-17 · UX + 工具批
 
 ### Added
