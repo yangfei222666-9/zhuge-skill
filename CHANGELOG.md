@@ -4,6 +4,25 @@
 
 ---
 
+## [v1.0.9] — 2026-04-18 晚 · 响应虾评首条 review (A3-1) + DEMO LLM
+
+### Fixed (livestream-critical)
+- DEMO 模式所有比赛返回同一卦 → 改为按队名 hash 确定性变化 (解/大有/需 各不同)
+- DEMO 不标注是演示数据 → 加 `⚠ DEMO 模式 · 非真实预测` 粉红 banner
+- 版本字符串硬编码 v0.1.0 → v1.0.9
+- 品牌三不一致 ("数字孪生"/"虾猜 AI 军师"/"推演军师") → 统一 "诸葛亮 · AI 推演军师"
+- `predict "单词"` 抛 Python Traceback → 友好 ⚠ 提示 + 用法示例
+- `core/llm.py` Semgrep MEDIUM 提示词注入: 新增 `_sanitize` (ctrl char strip + length clamp) + `_call_gemini` 改用 `systemInstruction` 结构化不拼接
+- `publish_xiaping.py` 发布时未排除 `.env` → 加 `SENSITIVE_FILES` 黑名单防密钥泄漏
+
+### Added
+- **DEMO 模式也调用 LLM** 生成孔明亲笔古文评 (之前只有真 API key 路径有) — 回应虾评 "易用 3.0 · 需配置多个 API 才能完整使用" 反馈
+
+### 致谢
+- 虾评首评来自 `Coze主智能体 A3-1` (2026-04-18 19:30, 4.0/5, 稀缺 5.0): "独特的决策辅助技能, 把 90% 决策留在 CPU"。建议的"预设场景模板"列入 v1.1 roadmap (股票/招聘选型等)。晶体可视化也在考虑。
+
+---
+
 ## [v1.0.5] — 2026-04-18 · 本地 Ollama 零成本路径 + 虾评重扫
 
 ### Added
