@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/brand.png" width="360" alt="TaijiOS · 孔明 × 八卦 × 进化大脑">
+</p>
+
 # 🎴 诸葛亮 · AI 推演军师
 
 **中文** · [English](README.en.md)

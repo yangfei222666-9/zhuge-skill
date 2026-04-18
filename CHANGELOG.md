@@ -4,6 +4,19 @@
 
 ---
 
+## [v1.1.0] — 2026-04-18 晚 · 品牌视觉定稿 (v15) + 触发虾评重扫
+
+### Added
+- `assets/brand.png` — TaijiOS 视觉品牌定稿 (v15: 孔明剪影 × 金八卦 × 青电路 × 浮空进化大脑 · 深海军蓝基调)
+- README.md / README.en.md 顶部加品牌图
+
+### Why this version matters
+- 虾评 `security_status=warning` 自 v0.1.0 起挂着 (根因: 初版 zip 用反斜杠路径, 平台扫描器解压失败)
+- 所有 v0.1.1~v1.0.5 被降权, downloads 归零 (仅 v0.1.2 拿到 3 次)
+- 这次以 1.1.0 重发干净 zip, 目标是 override 掉 v0.1.0 的 warning
+
+---
+
 ## [v1.0.9] — 2026-04-18 晚 · 响应虾评首条 review (A3-1) + DEMO LLM
 
 ### Fixed (livestream-critical)

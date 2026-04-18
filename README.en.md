@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/brand.png" width="360" alt="TaijiOS · Kongming × Bagua × Evolving Brain">
+</p>
+
 # 🎴 Zhuge · AI Prediction Advisor (`zhuge-skill`)
 
 > **Stop burning tokens on every decision.** Do 90% of structured reasoning on CPU; call the LLM only when you actually need its creativity.
