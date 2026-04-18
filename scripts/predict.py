@@ -282,6 +282,17 @@ def run_demo(match_str: str = None):
     print(f"\n  {NEON_GREEN}[推荐]{RESET}")
     print(f"    1X2: {NEON_GREEN}{BOLD}{decision['1x2']}{RESET} (信心: {decision['confidence']})")
 
+    # If user has LLM configured, also show 孔明亲笔 in demo
+    try:
+        llm_text = kongming.llm_verdict(hex_result, {"match": display_match}, decision)
+        if llm_text:
+            print(f"\n  {NEON_PINK}╔═══════════════ 孔明亲笔 ═══════════════╗{RESET}")
+            for line in llm_text.strip().split("\n"):
+                print(f"  {NEON_PINK}║{RESET}  {line}")
+            print(f"  {NEON_PINK}╚════════════════════════════════════════╝{RESET}")
+    except Exception:
+        pass  # demo shouldn't crash if LLM fails
+
     print(f"\n  {NEON_PINK}━━━ DEMO 结束 · 以上为确定性伪数据, 非真实预测 ━━━{RESET}")
     print(f"  {DIM}真数据路径: 编辑 .env.example → .env 填 API_FOOTBALL_KEY{RESET}")
     print(f"  {DIM}零成本本地 LLM 路径: 装 Ollama + qwen2.5:7b (参考 README §三档落地){RESET}\n")
