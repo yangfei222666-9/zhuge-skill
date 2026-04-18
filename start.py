@@ -81,7 +81,13 @@ def main():
         # 自动猜联赛（如果用户没传 --league）
         else:
             league = _guess_league(match)
-        predict_match(match, league=league)
+        # Friendly error if match format wrong (e.g. "Chelsea" without "vs")
+        try:
+            predict_match(match, league=league)
+        except ValueError as e:
+            print(f"\n  ⚠ {e}")
+            print(f"  示例: python start.py predict \"Chelsea vs Man Utd\"\n")
+            sys.exit(1)
     elif args[0] in ("stats", "history"):
         from scripts.stats import show_stats
         show_stats()
