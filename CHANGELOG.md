@@ -4,7 +4,20 @@
 
 ---
 
-## [v1.1.0] — 2026-04-18 晚 · 品牌视觉定稿 (v15) + 触发虾评重扫
+## [v1.1.1] — 2026-04-19 凌晨 · 新手踩坑修复 (LLM_PROVIDER 必写) + 文档一致性
+
+### Fixed
+- **坑 #15**: `.env` 只填 `DEEPSEEK_API_KEY` 但没写 `LLM_PROVIDER=deepseek` → LLM 静默不调用 (2026-04-18 晚朋友实测踩到)
+- **缺失 `.env.example`**: README 引用它但文件不存在 (朋友无从下手) · 补上 · 把 LLM_PROVIDER 必要性 + Windows 编码坑都标红
+- **README 30 秒上手**: 重写成 5 步真实流程 (clone / 装依赖 / .env / 编码 / 启动), 加两个坑显著提示
+- **sync.py docstring**: 陈旧远程 URL `taijios9/zhuge-crystals` → `yangfei222666-9/zhuge-crystals`
+
+### Note
+- v1.1.0 "触发虾评重扫" 描述不准 — 实际靠重建 skill_id (`f0cb5f86`) 解决, `POST /api/upload` 不重扫 security. 已记入 memory.
+
+---
+
+## [v1.1.0] — 2026-04-18 晚 · 品牌视觉定稿 (v15) + 发新 skill
 
 ### Added
 - `assets/brand.png` — TaijiOS 视觉品牌定稿 (v15: 孔明剪影 × 金八卦 × 青电路 × 浮空进化大脑 · 深海军蓝基调)

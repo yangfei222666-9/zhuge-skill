@@ -23,7 +23,7 @@
     python scripts/sync.py status             # 查看本地晶体池
 
 远程地址（可被 ZHUGE_REMOTE_CRYSTAL_URL 环境变量覆盖）：
-    https://raw.githubusercontent.com/taijios9/zhuge-crystals/main/crystals.jsonl
+    https://raw.githubusercontent.com/yangfei222666-9/zhuge-crystals/main/crystals.jsonl
     —— 这是一个**公共只读** URL，curl 一下就能看到内容，完全透明。
 """
 import sys

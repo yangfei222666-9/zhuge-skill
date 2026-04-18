@@ -32,15 +32,27 @@
 git clone <repo>  # 或 unzip zhuge-skill.zip
 cd zhuge-skill
 
-# 2. 一键启动（带欢迎动画 + 引导式安装）
+# 2. 装依赖 (只 2 个: requests + python-dotenv)
+pip install -r requirements.txt
+
+# 3. 复制配置模板 → 填 key
+cp .env.example .env   # Windows: copy .env.example .env
+# 编辑 .env 至少填 2 行:
+#   LLM_PROVIDER=deepseek     ← 必须! 不写这行 LLM 静默不调用 (坑 #15)
+#   DEEPSEEK_API_KEY=<你的key> ← 去 platform.deepseek.com 领, ¥5 免费够跑几千次
+
+# 4. Windows 用户必设 (否则 ⚠ 字符崩)
+set PYTHONIOENCODING=utf-8   # cmd; PowerShell: $env:PYTHONIOENCODING='utf-8'
+
+# 5. 一键启动
 python start.py
 ```
 
-就这样。`start.py` 会自动：
-- 播放赛博诸葛亮欢迎动画
-- 检查 Python / 依赖 / API key
-- 引导你 30 秒完成配置
-- 跑一次 demo 让你看到效果
+**就这样**. `start.py` 会自动: 播放赛博诸葛亮欢迎动画 / 检查依赖 / 引导配置 / 跑 demo.
+
+> ⚠️ **两个新手坑 (2026-04-18 晚朋友踩过 · 已在 .env.example 标记)**:
+> 1. `LLM_PROVIDER` 必须写 · 只填 `*_API_KEY` 不够, LLM 不会调用
+> 2. Windows cmd 需 `PYTHONIOENCODING=utf-8`, 否则遇 `⚠` 等字符抛 UnicodeEncodeError
 
 ---
 
