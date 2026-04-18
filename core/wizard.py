@@ -54,7 +54,7 @@ def confirm(prompt, default=True):
 
 def write_env(values):
     """写 .env 文件"""
-    lines = ["# 虾猜 AI 军师 — 自动生成的配置\n"]
+    lines = ["# 诸葛亮 · AI 推演军师 — 自动生成的配置\n"]
     for k, v in values.items():
         if v:
             lines.append(f"{k}={v}\n")

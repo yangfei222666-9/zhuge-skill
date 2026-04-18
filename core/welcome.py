@@ -1,4 +1,4 @@
-"""欢迎动画 — 诸葛亮 · 数字孪生（赛博朋克风格）"""
+"""欢迎动画 — 诸葛亮 · 推演军师（赛博朋克风格）"""
 import sys
 import time
 import os
@@ -63,7 +63,7 @@ def matrix_rain(width=58, height=3):
 
 def hud_border_top():
     """HUD 顶部框（含状态条）"""
-    print(f"  {NEON_CYAN}┌─{NEON_PINK}[ SYS ]{NEON_CYAN}─────────────{NEON_GREEN}[ INIT ]{NEON_CYAN}──────────{NEON_YELLOW}[ v0.1.0 ]{NEON_CYAN}─┐{RESET}")
+    print(f"  {NEON_CYAN}┌─{NEON_PINK}[ SYS ]{NEON_CYAN}─────────────{NEON_GREEN}[ INIT ]{NEON_CYAN}──────────{NEON_YELLOW}[ v1.0.5 ]{NEON_CYAN}─┐{RESET}")
 
 
 def hud_border_bottom():
@@ -143,7 +143,7 @@ def render_bagua_hud():
 def play_welcome(skip_on_keypress=True):
     """主入口 — 赛博诸葛亮欢迎动画"""
     if not sys.stdout.isatty():
-        print("\n  诸葛亮 · 数字孪生 v0.1.0\n")
+        print("\n  诸葛亮 · 推演军师 v1.0.5\n")
         return
 
     print()

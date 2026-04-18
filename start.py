@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-虾猜 AI 军师 — 一键启动入口
+诸葛亮 · AI 推演军师 — 一键启动入口
 
 Usage:
-    python start.py              # 引导式安装+演示
-    python start.py demo         # 跳过引导直接看 demo
-    python start.py predict <比赛>  # 直接预测
+    python start.py                      # 引导式安装+演示
+    python start.py demo                 # 跳过引导直接看 demo
+    python start.py predict <比赛>        # 直接预测 (需 API key, 否则走 demo)
+    python start.py stats                # 历史命中率
 """
 import sys
 import time

@@ -64,8 +64,8 @@ def predict_match(match_str: str, league: str = "serie-a", save: bool = True,
     print(f"  {DIM}>{RESET} {NEON_GREEN}[1/5]{RESET} 拉取 API-Football...")
     fid = api_football.find_fixture(home, away, league=league)
     if not fid:
-        print(f"  {DIM}    未找到 fixture，启用 demo 模式{RESET}")
-        return run_demo()
+        print(f"  {DIM}    未找到 fixture，启用 demo 模式 (配 API_FOOTBALL_KEY 才跑真数据){RESET}")
+        return run_demo(match_str=match_str)
     print(f"  {DIM}    fixture id: {fid}{RESET}")
 
     odds = api_football.get_odds(fid)
@@ -206,7 +206,7 @@ def predict_match(match_str: str, league: str = "serie-a", save: bool = True,
     if save:
         record = {
             "exp_id": hashlib.md5(f"{match_str}{time.time()}".encode()).hexdigest()[:8],
-            "source": "predict_v0_1_0",
+            "source": "predict_v1_0_5",
             "timestamp": time.time(),
             "match": match_str,
             "league": league,
@@ -230,18 +230,38 @@ def predict_match(match_str: str, league: str = "serie-a", save: bool = True,
     return record if save else None
 
 
-def run_demo():
-    """零配置 demo — 用样本数据展示完整流程"""
+def run_demo(match_str: str = None):
+    """零配置 demo — 用样本数据展示完整流程
+    match_str: 给了则基于队名 hash 生成确定性伪 yao 值 (同比赛每次同结果, 不同比赛不同结果)
+    """
     print(f"\n  {NEON_PINK}{'━' * 50}{RESET}")
-    print(f"  {BOLD}{NEON_PINK}DEMO 模式{RESET}  {DIM}（用内置样本数据，无需 API key）{RESET}")
+    print(f"  {BOLD}{NEON_PINK}⚠ DEMO 模式 · 非真实预测{RESET}")
+    print(f"  {DIM}用内置样本数据演示 · 配 API_FOOTBALL_KEY 才跑真行情{RESET}")
     print(f"  {NEON_PINK}{'━' * 50}{RESET}\n")
 
-    sample_yao = {
-        "攻防": 0.560, "士气": 0.600, "伤停": 0.500,
-        "主客场": 0.650, "交锋": 0.533, "赔率": 0.608,
-    }
+    if match_str:
+        import hashlib
+        seed = int(hashlib.md5(match_str.encode('utf-8')).hexdigest()[:8], 16)
+        def vary(base, idx):
+            offset = ((seed >> (idx * 4)) & 0xFF) / 255 * 0.4 - 0.2
+            return max(0.1, min(0.9, base + offset))
+        sample_yao = {
+            "攻防":   round(vary(0.560, 0), 3),
+            "士气":   round(vary(0.600, 1), 3),
+            "伤停":   round(vary(0.500, 2), 3),
+            "主客场": round(vary(0.650, 3), 3),
+            "交锋":   round(vary(0.533, 4), 3),
+            "赔率":   round(vary(0.608, 5), 3),
+        }
+        display_match = match_str
+    else:
+        sample_yao = {
+            "攻防": 0.560, "士气": 0.600, "伤停": 0.500,
+            "主客场": 0.650, "交锋": 0.533, "赔率": 0.608,
+        }
+        display_match = "Napoli vs Lazio (样本)"
 
-    print(f"  {BOLD}样本比赛: Napoli vs Lazio (2026-04-19){RESET}\n")
+    print(f"  {BOLD}演示对阵: {display_match}{RESET}\n")
     print(f"  {NEON_GREEN}[6 维爻位]{RESET}")
     for k, v in sample_yao.items():
         state = f"{NEON_PINK}阳{RESET}" if v > 0.5 else f"{NEON_CYAN}阴{RESET}"
@@ -262,8 +282,9 @@ def run_demo():
     print(f"\n  {NEON_GREEN}[推荐]{RESET}")
     print(f"    1X2: {NEON_GREEN}{BOLD}{decision['1x2']}{RESET} (信心: {decision['confidence']})")
 
-    print(f"\n  {DIM}━━━ DEMO 结束 ━━━{RESET}")
-    print(f"  {DIM}配置 API Key 后用真实数据：python start.py predict \"<比赛>\"{RESET}\n")
+    print(f"\n  {NEON_PINK}━━━ DEMO 结束 · 以上为确定性伪数据, 非真实预测 ━━━{RESET}")
+    print(f"  {DIM}真数据路径: 编辑 .env.example → .env 填 API_FOOTBALL_KEY{RESET}")
+    print(f"  {DIM}零成本本地 LLM 路径: 装 Ollama + qwen2.5:7b (参考 README §三档落地){RESET}\n")
 
 
 def main():
