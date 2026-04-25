@@ -12,8 +12,15 @@ _TABLE = None
 def _load_table() -> Dict:
     global _TABLE
     if _TABLE is None:
-        with open(HEX_TABLE_PATH, encoding="utf-8") as f:
-            _TABLE = json.load(f)
+        try:
+            with open(HEX_TABLE_PATH, encoding="utf-8") as f:
+                _TABLE = json.load(f)
+        except FileNotFoundError as e:
+            raise RuntimeError(f"hexagram table missing: {HEX_TABLE_PATH}") from e
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"hexagram table is not valid JSON: {HEX_TABLE_PATH}") from e
+        if not isinstance(_TABLE, dict):
+            raise RuntimeError(f"hexagram table must be a JSON object: {HEX_TABLE_PATH}")
     return _TABLE
 
 

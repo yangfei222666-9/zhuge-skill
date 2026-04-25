@@ -87,7 +87,16 @@ def predict_match(match_str: str, league: str = "serie-a", save: bool = True,
     cross = None
     if use_cross_validate:
         print(f"  {DIM}>{RESET} {NEON_GREEN}[2/5]{RESET} 跨多家博彩验证...")
-        cross = the_odds.cross_validate(home, away, league=league)
+        try:
+            cross = the_odds.cross_validate(home, away, league=league)
+        except Exception as e:
+            try:
+                from scripts.error_log import log_error
+                log_error("the_odds_cross_validate", e,
+                          {"match": match_str, "league": league})
+            except Exception:
+                pass
+            cross = None
         if cross:
             print(f"  {DIM}    {cross['bookmaker_count']} 家博彩平均: 主{cross['home_avg']:.2f} 平{cross['draw_avg']:.2f} 客{cross['away_avg']:.2f}{RESET}")
             print(f"  {DIM}    去抽水真实概率: 主{cross['home_implied']*100:.0f}% 平{cross['draw_implied']*100:.0f}% 客{cross['away_implied']*100:.0f}%{RESET}")

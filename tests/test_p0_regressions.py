@@ -4,8 +4,10 @@ import unittest
 from pathlib import Path
 
 from adapters import api_football
+from core import hexagram
 from core.llm import LLMClient
 from scripts import backfill
+from scripts import predict
 
 
 class FakeGeminiRequests:
@@ -133,6 +135,67 @@ class P0RegressionTests(unittest.TestCase):
 
         self.assertTrue(backup_exists)
         self.assertEqual(saved, [{"exp_id": "new"}])
+
+    def test_hexagram_table_missing_reports_clear_error(self):
+        old_path, old_table = hexagram.HEX_TABLE_PATH, hexagram._TABLE
+        with tempfile.TemporaryDirectory() as tmp:
+            hexagram.HEX_TABLE_PATH = Path(tmp) / "missing_hexagram_64.json"
+            hexagram._TABLE = None
+            try:
+                with self.assertRaisesRegex(RuntimeError, "hexagram table missing"):
+                    hexagram.lookup("111111")
+            finally:
+                hexagram.HEX_TABLE_PATH = old_path
+                hexagram._TABLE = old_table
+
+    def test_predict_cross_validate_exception_downgrades_to_skip(self):
+        old_find = predict.api_football.find_fixture
+        old_odds = predict.api_football.get_odds
+        old_teams = predict.api_football.get_fixture_teams
+        old_form = predict.api_football.get_recent_form
+        old_h2h = predict.api_football.get_h2h
+        old_cross = predict.the_odds.cross_validate
+        old_llm = predict.kongming.llm_verdict
+
+        predict.api_football.find_fixture = lambda *args, **kwargs: 123
+        predict.api_football.get_odds = lambda *args, **kwargs: {
+            "home": 1.8,
+            "draw": 3.4,
+            "away": 4.0,
+            "over_2_5": 2.0,
+            "under_2_5": 1.8,
+        }
+        predict.api_football.get_fixture_teams = lambda *args, **kwargs: (1, 2)
+        predict.api_football.get_recent_form = lambda *args, **kwargs: {
+            "form": ["W", "D", "L", "W", "D"],
+            "goals_for": 6,
+            "goals_against": 4,
+        }
+        predict.api_football.get_h2h = lambda *args, **kwargs: {
+            "home_wins": 2,
+            "draws": 1,
+            "away_wins": 2,
+        }
+        predict.the_odds.cross_validate = (
+            lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("odds down"))
+        )
+        predict.kongming.llm_verdict = lambda *args, **kwargs: None
+        try:
+            predict.predict_match(
+                "Home vs Away",
+                league="serie-a",
+                save=False,
+                use_xg=False,
+                use_cross_validate=True,
+            )
+        finally:
+            predict.api_football.find_fixture = old_find
+            predict.api_football.get_odds = old_odds
+            predict.api_football.get_fixture_teams = old_teams
+            predict.api_football.get_recent_form = old_form
+            predict.api_football.get_h2h = old_h2h
+            predict.the_odds.cross_validate = old_cross
+            predict.kongming.llm_verdict = old_llm
 
 
 if __name__ == "__main__":
