@@ -11,6 +11,7 @@
 > 整合 **API-Football / The Odds API / Understat xG** 等 5 大数据源，以 **6 维爻位 + 64 卦决策树**做结构化推演 —— **0 token 做预测**，LLM 只在你明确要"孔明评语"时才调用（省 90% token）。支持 **DeepSeek / Kimi / 通义 / 智谱 / Claude / GPT / Gemini** 等 12 家 LLM。
 
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![CI](https://github.com/yangfei222666-9/zhuge-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/yangfei222666-9/zhuge-skill/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Hermes](https://img.shields.io/badge/Hermes-Agent-cyan.svg)](https://github.com/NousResearch/hermes-agent)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-compatible-green.svg)](https://xiaping.coze.site/)
