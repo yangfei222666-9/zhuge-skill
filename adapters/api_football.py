@@ -83,9 +83,31 @@ def get_odds(fixture_id: int, bookmaker: int = 8) -> Optional[Dict]:
     data = _get("/odds", {"fixture": fixture_id, "bookmaker": bookmaker})
     if not data or not data.get("response"):
         return None
-    bets = {b["name"]: b["values"] for b in data["response"][0]["bookmakers"][0]["bets"]}
-    mw = {v["value"]: float(v["odd"]) for v in bets.get("Match Winner", [])}
-    ou = {v["value"]: float(v["odd"]) for v in bets.get("Goals Over/Under", [])}
+    bookmakers = data["response"][0].get("bookmakers") or []
+    if not bookmakers:
+        return None
+    bets_raw = bookmakers[0].get("bets") or []
+    bets = {}
+    for bet in bets_raw:
+        name = bet.get("name")
+        if name:
+            bets[name] = bet.get("values") or []
+
+    def _odds_map(values: List[Dict]) -> Dict[str, float]:
+        out = {}
+        for item in values:
+            value = item.get("value")
+            odd = item.get("odd")
+            if value is None or odd is None:
+                continue
+            try:
+                out[value] = float(odd)
+            except (TypeError, ValueError):
+                continue
+        return out
+
+    mw = _odds_map(bets.get("Match Winner", []))
+    ou = _odds_map(bets.get("Goals Over/Under", []))
     return {
         "home": mw.get("Home"),
         "draw": mw.get("Draw"),

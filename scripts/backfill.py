@@ -28,18 +28,27 @@ DB = ROOT / "data" / "experience.jsonl"
 SEED = ROOT / "data" / "seed_experience.jsonl"
 
 
+def _log_error(category: str, exc: BaseException, context: dict):
+    try:
+        from scripts.error_log import log_error
+        log_error(category, exc, context)
+    except Exception:
+        pass
+
+
 def _load_db() -> list:
     """合并种子 + 用户库"""
     records = []
     for path in [SEED, DB]:
         if path.exists():
             with open(path, encoding="utf-8") as f:
-                for line in f:
+                for line_no, line in enumerate(f, start=1):
                     if line.strip():
                         try:
                             records.append(json.loads(line))
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            _log_error("backfill_load_db", e,
+                                       {"path": str(path), "line_no": line_no})
     return records
 
 
@@ -57,9 +66,13 @@ def _save_db(records: list):
                     except Exception:
                         pass
     user_records = [r for r in records if r.get("exp_id") not in seed_ids]
-    with open(DB, "w", encoding="utf-8") as f:
+    if DB.exists():
+        DB.with_suffix(DB.suffix + ".bak").write_bytes(DB.read_bytes())
+    tmp = DB.with_name(DB.name + ".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
         for r in user_records:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    tmp.replace(DB)
 
 
 def _fetch_actual_result(api_fid: int) -> dict:

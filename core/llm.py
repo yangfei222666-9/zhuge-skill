@@ -172,7 +172,9 @@ class LLMClient:
         if system:
             body["systemInstruction"] = {"parts": [{"text": system}]}
         r = requests.post(
-            f"{self.base}/models/{self.model}:generateContent?key={self.api_key}",
+            f"{self.base}/models/{self.model}:generateContent",
+            headers={"x-goog-api-key": self.api_key,
+                     "Content-Type": "application/json"},
             json=body,
             timeout=timeout,
         )
