@@ -129,10 +129,8 @@ MIT. Use it, fork it, ship it.
 
 ## 📬 Feedback / Contact
 
-Tried it? Couldn't install it? Have ideas? **Reach out directly** — this is a very early project and every piece of feedback (even "it crashed on my machine") gets read.
+Tried it? Couldn't install it? Have ideas? Please use public issues so project feedback stays reviewable:
 
-- **Email (preferred)**: `yangfei222666@gmail.com`
-- WeChat (secondary, Chinese-speakers): `yf529486`
 - GitHub Issue: [open one](https://github.com/yangfei222666-9/zhuge-skill/issues/new)
 
 ---
